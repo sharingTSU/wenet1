@@ -291,9 +291,12 @@ class StressTestConfig:
             )
 
         if 'audio_dir' in data:
-            config.audio_dir = data['audio_dir']
-        if 'audio_files' in data:
-            config.audio_files = data['audio_files']
+            audio_dir = data['audio_dir']
+            if 'audio_files' in data and data['audio_files']:
+                config.audio_dir = audio_dir
+                config.audio_files = data['audio_files']
+            elif audio_dir:
+                config.load_audio_files(audio_dir)
         if 'output_dir' in data:
             config.output_dir = data['output_dir']
         if 'web_port' in data:
