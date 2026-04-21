@@ -198,17 +198,43 @@ class StressTestConfig:
 
     def load_audio_files(self, audio_dir: str) -> List[str]:
         """加载音频目录中的所有音频文件"""
-        self.audio_dir = audio_dir
+        self.audio_dir = os.path.abspath(audio_dir) if audio_dir else ""
         self.audio_files = []
+        self._all_files_in_dir = []
+        self._audio_extensions = ('.wav', '.pcm', '.mp3', '.flac', '.ogg', '.m4a', '.aac', '.wma')
 
-        if not os.path.exists(audio_dir):
+        if not audio_dir:
             return self.audio_files
 
-        for filename in os.listdir(audio_dir):
-            if filename.lower().endswith(('.wav', '.pcm')):
-                self.audio_files.append(os.path.join(audio_dir, filename))
+        abs_audio_dir = os.path.abspath(audio_dir)
+
+        if not os.path.exists(abs_audio_dir):
+            return self.audio_files
+
+        if not os.path.isdir(abs_audio_dir):
+            return self.audio_files
+
+        try:
+            all_entries = os.listdir(abs_audio_dir)
+            for entry in all_entries:
+                full_path = os.path.join(abs_audio_dir, entry)
+                if os.path.isfile(full_path):
+                    self._all_files_in_dir.append(entry)
+                    if entry.lower().endswith(self._audio_extensions):
+                        self.audio_files.append(full_path)
+        except Exception as e:
+            print(f"Error scanning directory {abs_audio_dir}: {e}")
+            pass
 
         return self.audio_files
+
+    def get_all_files_in_dir(self) -> List[str]:
+        """获取目录中的所有文件"""
+        return getattr(self, '_all_files_in_dir', [])
+
+    def get_audio_extensions(self) -> tuple:
+        """获取支持的音频扩展名"""
+        return getattr(self, '_audio_extensions', ('.wav', '.pcm'))
 
     def get_audio_file(self, index: int) -> Optional[str]:
         """根据索引获取音频文件（循环使用）"""

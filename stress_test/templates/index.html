@@ -853,8 +853,52 @@
                         item.textContent = `${index + 1}. ${file}`;
                         fileList.appendChild(item);
                     });
+                    
+                    const debugInfo = document.createElement('div');
+                    debugInfo.style.cssText = 'margin-top: 12px; padding: 10px; background: #f0fff4; border-left: 3px solid #38a169; border-radius: 4px; font-size: 12px; color: #22543d;';
+                    debugInfo.innerHTML = `
+                        <div><strong>扫描路径:</strong> ${data.directory || (data.debug && data.debug.absolute_directory) || '-'}</div>
+                        <div><strong>找到音频文件:</strong> ${data.count} 个</div>
+                    `;
+                    fileList.appendChild(debugInfo);
+                    
                 } else {
-                    emptyState.innerHTML = `<div class="icon">📁</div><p>未找到音频文件 (支持 .wav, .pcm)</p>`;
+                    let debugHtml = '';
+                    if (data.debug) {
+                        debugHtml = '<div style="margin-top: 12px; padding: 10px; background: #fff3cd; border-left: 3px solid #f0ad4e; border-radius: 4px; font-size: 12px; color: #856404;">';
+                        debugHtml += '<strong>调试信息:</strong><br>';
+                        
+                        if (data.debug.input_directory !== undefined) {
+                            debugHtml += `输入路径: ${data.debug.input_directory}<br>`;
+                        }
+                        if (data.debug.absolute_directory) {
+                            debugHtml += `实际扫描路径: ${data.debug.absolute_directory}<br>`;
+                        }
+                        if (data.debug.current_working_directory) {
+                            debugHtml += `服务器工作目录: ${data.debug.current_working_directory}<br>`;
+                        }
+                        if (data.debug.exists !== undefined) {
+                            debugHtml += `目录存在: ${data.debug.exists ? '是' : '否'}<br>`;
+                        }
+                        if (data.debug.total_files_found !== undefined) {
+                            debugHtml += `目录中总文件数: ${data.debug.total_files_found}<br>`;
+                        }
+                        if (data.debug.all_files && data.debug.all_files.length > 0) {
+                            debugHtml += `找到的文件: ${data.debug.all_files.join(', ')}<br>`;
+                        }
+                        if (data.debug.supported_extensions) {
+                            debugHtml += `支持的音频格式: ${data.debug.supported_extensions.join(', ')}`;
+                        }
+                        debugHtml += '</div>';
+                    }
+                    
+                    let message = data.message || '未找到音频文件';
+                    
+                    emptyState.innerHTML = `
+                        <div class="icon">📁</div>
+                        <p>${message}</p>
+                        ${debugHtml}
+                    `;
                     emptyState.style.display = 'block';
                 }
             } catch (e) {

@@ -122,10 +122,37 @@ class StressTestManager:
         info = get_hardware_info()
         return info.to_dict()
 
-    def scan_audio_files(self, directory: str) -> list:
-        """扫描音频目录"""
-        files = self.config.load_audio_files(directory)
-        return [os.path.basename(f) for f in files]
+    def scan_audio_files(self, directory: str) -> dict:
+        """扫描音频目录，返回详细信息"""
+        import os
+
+        cwd = os.getcwd()
+
+        if directory == '.' or directory == '':
+            abs_directory = cwd
+        else:
+            abs_directory = os.path.abspath(directory)
+
+        exists = os.path.exists(abs_directory)
+        is_dir = os.path.isdir(abs_directory) if exists else False
+
+        files = self.config.load_audio_files(abs_directory)
+
+        all_files = self.config.get_all_files_in_dir()
+        extensions = self.config.get_audio_extensions()
+
+        return {
+            'input_directory': directory,
+            'absolute_directory': abs_directory,
+            'current_working_directory': cwd,
+            'exists': exists,
+            'is_directory': is_dir,
+            'audio_files': [os.path.basename(f) for f in files],
+            'all_files': all_files,
+            'audio_count': len(files),
+            'total_files': len(all_files),
+            'supported_extensions': list(extensions)
+        }
 
 
 manager = StressTestManager()
@@ -166,21 +193,65 @@ def scan_audio():
         data = request.get_json()
         directory = data.get('directory', '')
 
-        if not directory or not os.path.exists(directory):
+        scan_result = manager.scan_audio_files(directory)
+
+        if not scan_result['exists']:
             return jsonify({
                 'success': False,
-                'message': 'Invalid directory'
+                'message': '目录不存在',
+                'debug': {
+                    'input_directory': scan_result['input_directory'],
+                    'absolute_directory': scan_result['absolute_directory'],
+                    'current_working_directory': scan_result['current_working_directory'],
+                    'exists': scan_result['exists'],
+                    'supported_extensions': scan_result['supported_extensions']
+                }
             }), 400
 
-        files = manager.scan_audio_files(directory)
+        if not scan_result['is_directory']:
+            return jsonify({
+                'success': False,
+                'message': '路径不是目录',
+                'debug': {
+                    'input_directory': scan_result['input_directory'],
+                    'absolute_directory': scan_result['absolute_directory'],
+                    'is_directory': scan_result['is_directory']
+                }
+            }), 400
+
+        if scan_result['audio_count'] == 0:
+            return jsonify({
+                'success': False,
+                'message': f'目录中未找到支持的音频文件',
+                'debug': {
+                    'input_directory': scan_result['input_directory'],
+                    'absolute_directory': scan_result['absolute_directory'],
+                    'total_files_found': scan_result['total_files'],
+                    'all_files': scan_result['all_files'],
+                    'supported_extensions': scan_result['supported_extensions']
+                }
+            }), 400
+
         return jsonify({
             'success': True,
-            'files': files,
-            'count': len(files),
-            'directory': directory
+            'files': scan_result['audio_files'],
+            'count': scan_result['audio_count'],
+            'directory': scan_result['absolute_directory'],
+            'input_directory': scan_result['input_directory'],
+            'debug': {
+                'absolute_directory': scan_result['absolute_directory'],
+                'current_working_directory': scan_result['current_working_directory'],
+                'total_files_in_dir': scan_result['total_files'],
+                'supported_extensions': scan_result['supported_extensions']
+            }
         })
     except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
+        import traceback
+        return jsonify({
+            'success': False,
+            'message': str(e),
+            'traceback': traceback.format_exc()
+        }), 500
 
 
 @app.route('/api/test/start', methods=['POST'])
