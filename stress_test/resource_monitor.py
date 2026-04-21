@@ -15,7 +15,7 @@ try:
 except ImportError:
     PSUTIL_AVAILABLE = False
 
-from stress_test.config import ResourceStats, HardwareInfo
+from config import ResourceStats, HardwareInfo
 
 
 class ResourceMonitor:

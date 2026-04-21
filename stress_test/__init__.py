@@ -4,16 +4,16 @@
 __version__ = "1.0.0"
 __author__ = "Stress Test Team"
 
-from stress_test.config import StressTestConfig, TestCriteria, TestResult
-from stress_test.client import WebSocketStreamingClient, ClientStats
-from stress_test.resource_monitor import ResourceMonitor, ResourceStats
-from stress_test.latency_measurer import LatencyMeasurer, LatencyStats
-from stress_test.stress_engine import StressTestEngine, TestProgress
-from stress_test.report_generator import ReportGenerator
+from config import StressTestConfig, TestCriteria, TestResult
+from client import WebSocketStreamingClient
+from resource_monitor import ResourceMonitor, ResourceStats
+from latency_measurer import LatencyMeasurer, LatencyStats
+from stress_engine import StressTestEngine, TestProgress
+from report_generator import ReportGenerator
 
 __all__ = [
     "StressTestConfig", "TestCriteria", "TestResult",
-    "WebSocketStreamingClient", "ClientStats",
+    "WebSocketStreamingClient",
     "ResourceMonitor", "ResourceStats",
     "LatencyMeasurer", "LatencyStats",
     "StressTestEngine", "TestProgress",

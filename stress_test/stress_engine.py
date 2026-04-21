@@ -10,14 +10,14 @@ from typing import Optional, List, Callable, Any, Dict
 from datetime import datetime
 from dataclasses import dataclass
 
-from stress_test.config import (
+from config import (
     StressTestConfig, TestCriteria, TestResult,
     ConcurrentTestResult, TestProgress, HardwareInfo,
     generate_test_id
 )
-from stress_test.client import ClientManager
-from stress_test.resource_monitor import ResourceMonitor, get_hardware_info
-from stress_test.latency_measurer import LatencyMeasurer, LatencySummary
+from client import ClientManager
+from resource_monitor import ResourceMonitor, get_hardware_info
+from latency_measurer import LatencyMeasurer, LatencySummary
 
 
 @dataclass

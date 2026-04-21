@@ -6,7 +6,7 @@ import statistics
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 
-from stress_test.config import LatencyStats
+from config import LatencyStats
 
 
 @dataclass

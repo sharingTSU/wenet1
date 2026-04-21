@@ -21,7 +21,10 @@ import os
 import sys
 import argparse
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, SCRIPT_DIR)
+
+os.chdir(SCRIPT_DIR)
 
 
 def check_dependencies():
@@ -61,7 +64,7 @@ def check_dependencies():
 
 def run_web_server(host='0.0.0.0', port=5000, debug=False):
     """启动Web服务器"""
-    from stress_test.web_app import run_server
+    from web_app import run_server
     
     print(f"\n🚀 启动Web服务器...")
     print(f"   地址: http://{host}:{port}")

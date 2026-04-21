@@ -25,7 +25,7 @@ try:
 except ImportError:
     SOUNDFILE_AVAILABLE = False
 
-from stress_test.config import LatencyStats, ClientConfig
+from config import LatencyStats, ClientConfig
 
 
 WS_START = json.dumps({

@@ -7,7 +7,7 @@ import os
 from typing import Dict, Any, Optional
 from datetime import datetime
 
-from stress_test.config import TestResult, ConcurrentTestResult
+from config import TestResult, ConcurrentTestResult
 
 
 class ReportGenerator:

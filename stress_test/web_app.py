@@ -10,19 +10,18 @@ from typing import Optional, Dict, Any
 from datetime import datetime
 from flask import Flask, render_template, request, jsonify, Response, stream_with_context
 
-import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+TEMPLATE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 
-from stress_test.config import (
+from config import (
     StressTestConfig, TestCriteria, TestResult,
     ClientConfig, EngineParams, generate_test_id
 )
-from stress_test.stress_engine import StressTestEngine, TestProgress
-from stress_test.report_generator import ReportGenerator
-from stress_test.resource_monitor import get_hardware_info
+from stress_engine import StressTestEngine, TestProgress
+from report_generator import ReportGenerator
+from resource_monitor import get_hardware_info
 
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder=TEMPLATE_DIR)
 app.config['SECRET_KEY'] = 'wenet-stress-test-secret-key-2024'
 
 
