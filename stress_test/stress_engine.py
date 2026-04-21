@@ -153,6 +153,14 @@ class StressTestEngine:
         criteria = self.config.test_criteria
         audio_files = self.config.audio_files
 
+        self._update_progress(TestProgress(
+            current_concurrent=0,
+            total_concurrent=criteria.max_concurrent,
+            status="running",
+            message=f"开始压力测试: 从1路到{criteria.max_concurrent}路并发",
+            percentage=0.0
+        ))
+
         current_concurrent = 1
 
         while self._running and current_concurrent <= criteria.max_concurrent:
@@ -164,7 +172,7 @@ class StressTestEngine:
                 current_concurrent=current_concurrent,
                 total_concurrent=criteria.max_concurrent,
                 status="running",
-                message=f"正在测试 {current_concurrent} 路并发...",
+                message=f"[{current_concurrent}/{criteria.max_concurrent}] 准备 {current_concurrent} 路客户端...",
                 percentage=(current_concurrent / criteria.max_concurrent) * 100.0
             ))
 
@@ -182,12 +190,25 @@ class StressTestEngine:
                     current_concurrent=current_concurrent,
                     total_concurrent=criteria.max_concurrent,
                     status="failed",
-                    message=f"测试失败: {test_result.fail_reason}",
+                    message=f"测试停止: {test_result.fail_reason}",
                     percentage=100.0
                 ))
                 break
             else:
                 self._max_concurrent_achieved = current_concurrent
+                self._update_progress(TestProgress(
+                    current_concurrent=current_concurrent,
+                    total_concurrent=criteria.max_concurrent,
+                    status="running",
+                    message=f"[{current_concurrent}/{criteria.max_concurrent}] 测试通过: 延迟={test_result.avg_first_packet_latency_ms:.1f}ms, CPU={test_result.peak_cpu_percent:.1f}%",
+                    percentage=(current_concurrent / criteria.max_concurrent) * 100.0,
+                    current_test_stats={
+                        'avg_first_packet_latency_ms': test_result.avg_first_packet_latency_ms,
+                        'max_first_packet_latency_ms': test_result.max_first_packet_latency_ms,
+                        'peak_cpu_percent': test_result.peak_cpu_percent,
+                        'peak_memory_percent': test_result.peak_memory_percent
+                    }
+                ))
 
             current_concurrent += 1
             await asyncio.sleep(1.0)

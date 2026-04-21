@@ -692,6 +692,14 @@
                                 <div class="stat-value"><span id="maxLatencyStatVal">-</span> ms</div>
                             </div>
                         </div>
+                        
+                        <!-- 实时日志 -->
+                        <div class="section-title" style="margin-top: 24px;">实时日志</div>
+                        <div class="live-log" id="liveLog">
+                            <div class="log-entry">
+                                <span class="log-time">[等待开始...]</span>
+                            </div>
+                        </div>
                     </div>
                     
                     <!-- 测试结果 -->
@@ -742,6 +750,48 @@
     <script>
         let eventSource = null;
         let isRunning = false;
+        let logEntries = [];
+        
+        function formatTime() {
+            const now = new Date();
+            return now.toLocaleTimeString('zh-CN', { hour12: false }) + '.' + 
+                   String(now.getMilliseconds()).padStart(3, '0');
+        }
+        
+        function addLog(message, type = 'info') {
+            const time = formatTime();
+            const entry = { time, message, type };
+            logEntries.push(entry);
+            
+            const logContainer = document.getElementById('liveLog');
+            if (logContainer) {
+                const logDiv = document.createElement('div');
+                logDiv.className = 'log-entry';
+                
+                const typeClass = {
+                    'info': 'log-info',
+                    'success': 'log-success',
+                    'warning': 'log-warning',
+                    'error': 'log-error'
+                }[type] || 'log-info';
+                
+                logDiv.innerHTML = `<span class="log-time">[${time}]</span> <span class="${typeClass}">${message}</span>`;
+                logContainer.appendChild(logDiv);
+                logContainer.scrollTop = logContainer.scrollHeight;
+            }
+            
+            if (logEntries.length > 100) {
+                logEntries = logEntries.slice(-50);
+            }
+        }
+        
+        function clearLogs() {
+            logEntries = [];
+            const logContainer = document.getElementById('liveLog');
+            if (logContainer) {
+                logContainer.innerHTML = '<div class="log-entry"><span class="log-time">[等待开始...]</span></div>';
+            }
+        }
         
         document.addEventListener('DOMContentLoaded', function() {
             initTabs();
@@ -910,6 +960,11 @@
         }
         
         async function startTest() {
+            if (isRunning) {
+                addLog('测试已在运行中', 'warning');
+                return;
+            }
+            
             const config = collectConfig();
             
             try {
@@ -935,6 +990,10 @@
                 }
                 
                 isRunning = true;
+                clearLogs();
+                addLog('测试启动成功', 'success');
+                addLog(`配置: 最大并发=${config.test_criteria.max_concurrent}, 延迟阈值=${config.test_criteria.max_first_packet_latency_ms}ms`, 'info');
+                
                 updateUIState(true);
                 startEventStream();
             } catch (e) {
@@ -945,15 +1004,9 @@
         async function stopTest() {
             try {
                 await fetch('/api/test/stop', { method: 'POST' });
-                isRunning = false;
-                updateUIState(false);
-                
-                if (eventSource) {
-                    eventSource.close();
-                    eventSource = null;
-                }
+                addLog('用户停止测试', 'warning');
             } catch (e) {
-                console.error('Stop failed:', e);
+                console.error('Failed to stop test:', e);
             }
         }
         
@@ -1042,7 +1095,18 @@
             
             const p = data.progress;
             
-            document.getElementById('statusMessage').textContent = p.message || '测试中...';
+            const oldMessage = document.getElementById('statusMessage').textContent;
+            const newMessage = p.message || '测试中...';
+            
+            if (oldMessage !== newMessage) {
+                let logType = 'info';
+                if (p.status === 'completed') logType = 'success';
+                else if (p.status === 'failed') logType = 'error';
+                
+                addLog(newMessage, logType);
+            }
+            
+            document.getElementById('statusMessage').textContent = newMessage;
             document.getElementById('currentConcurrent').textContent = p.current_concurrent;
             document.getElementById('totalConcurrent').textContent = p.total_concurrent;
             document.getElementById('progressPercent').textContent = p.percentage.toFixed(1) + '%';
@@ -1094,6 +1158,22 @@
         }
         
         function showResult(result) {
+            addLog('测试结果已就绪', 'success');
+            addLog(`最大并发路数: ${result.max_concurrent_achieved}`, 'info');
+            addLog(`完成测试轮数: ${result.test_results.length}`, 'info');
+            
+            const lastTest = result.test_results[result.test_results.length - 1];
+            if (lastTest && !lastTest.passed && lastTest.fail_reason) {
+                addLog(`停止原因: ${lastTest.fail_reason}`, 'warning');
+            }
+            
+            isRunning = false;
+            
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            
             const resultSection = document.getElementById('resultSection');
             const progressSection = document.getElementById('progressSection');
             const statusSection = document.getElementById('statusSection');
@@ -1106,7 +1186,6 @@
             const title = document.getElementById('resultTitle');
             const message = document.getElementById('resultMessage');
             
-            const lastTest = result.test_results[result.test_results.length - 1];
             const passed = lastTest ? lastTest.passed : true;
             
             if (passed) {
@@ -1142,6 +1221,8 @@
                 `;
                 tbody.appendChild(tr);
             });
+            
+            addLog('可以点击"开始测试"按钮重新进行测试', 'info');
         }
     </script>
 </body>
